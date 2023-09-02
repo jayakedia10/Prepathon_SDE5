@@ -78,6 +78,12 @@ const AddTripForm = () => {
                       </Grid>
 
                     </div>
+                        
+                    <div style={{display:'flex', justifyContent:'space-evenly'}}>
+                      <p><span style={{fontWeight:'bold', color:'rgb(67, 67, 136)'}}>Distance:</span> </p>
+                      <p><span style={{fontWeight:'bold', color:'rgb(67, 67, 136)'}}>Estimated Time:</span> </p>
+
+                    </div>
 
 
                   </Grid>
