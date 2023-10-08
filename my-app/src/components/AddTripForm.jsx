@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import ReactMapGl, { Marker, Source, Layer, GeolocateControl, FullscreenControl, NavigationControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxAutocomplete from "react-mapbox-autocomplete";
@@ -6,11 +6,12 @@ import './Tripform.css';
 import { Grid, TextField, Button, Card, CardContent, Typography } from '@mui/material';
 import { AiFillCar } from "react-icons/ai";
 import { FaTrain, FaPlaneDeparture } from "react-icons/fa";
-
+import { mapboxgl } from 'mapbox-gl';
 
 
 function AddTripForm() {
 
+  const [userLocation, setUserLocation] = useState({ latitude: 0, longitude: 0 });
   const [selectedButton, setSelectedButton] = useState(null);
   const [tripName, setTripName] = useState('');
   const [tripSize, setTripSize] = useState();
@@ -18,20 +19,42 @@ function AddTripForm() {
   const [privacy, setPrivacy] = useState([]);
   const [tripStatus, setTripStatus] = useState('');
   const [start, setStart] = useState([78.1772, 26.2124]);
-  const [end, setEnd] = useState([70.1772, 26.2124]);
+  const [end, setEnd] = useState([78.1772, 26.2124]);
   const [coords, setCoords] = useState([]);
   const [distance, setDistance] = useState([0, 0]);
   const [duration, setDuration] = useState([0, 0]);
-
+  
+  // eslint-disable-next-line no-undef
+  const geolocateControlRef = useCallback((ref) => {
+    if (ref) {
+      ref.on('geolocate', (event) => {
+        console.log('Current position coordinates:', event.coords);
+      });
+    }
+  }, []);
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        console.log('Current position coordinates:', latitude, longitude);
+        setUserLocation({ latitude, longitude });
+        console.log(userLocation.latitude);
+        console.log(userLocation.longitude);
+      });
+    }
+  }, []);
   useEffect(() => {
     getRoute();
   }, [end, start]);
+
+  const [userxLocation, setUserxLocation] = useState(null);
 
   const getRoute = async () => {
     const response = await fetch(
       `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=pk.eyJ1Ijoicm9hc3RlcnMwNSIsImEiOiJjbGx1amU5M2QxY3psM3FwcGtiM3NkaDdlIn0.V82yHMQKe9eWRTWbN9MH8Q`
     );
     const data = await response.json();
+    console.log(data);
     const time = data.routes[0].duration;
     const dis = data.routes[0].distance;
     setDuration([Math.floor(time / 3600), Math.floor((time % 3600) / 60)]);
@@ -46,7 +69,7 @@ function AddTripForm() {
     setEnd([long, lat]);
   }
   function handleSubmit() {
-    
+
   }
   const geojson = {
     "type": "FeatureCollection",
@@ -89,11 +112,20 @@ function AddTripForm() {
     zoom: 5,
   });
 
+  const handleGeolocate = (event) => {
+    const { coords } = event;
+    const { latitude, longitude } = coords;
+    console.log(latitude);
+    console.log(longitude);
+    setUserxLocation({ latitude, longitude });
+  };
+
+
   return (
     <>
       <>
         <div className="App">
-          <h3 className='head' style={{ color: 'rgb(67, 67, 136)', fontWeight: '900', marginLeft:'40%' }}>
+          <h3 className='head' style={{ color: 'rgb(67, 67, 136)', fontWeight: '900', marginLeft: '40%' }}>
             Create Trip
           </h3>
           <Grid container justifyContent="center">
@@ -106,7 +138,7 @@ function AddTripForm() {
                 <form>
                   <Grid container spacing={1}>
                     <Grid xs={12} sm={8} item>
-                      <TextField value={tripName} placeholder="Enter Trip Name" label="Trip Name" variant="outlined" fullWidth required />
+                      <TextField /* value={tripName}  */ placeholder="Enter Trip Name" label="Trip Name" variant="outlined" fullWidth required />
                     </Grid>
                     <Grid xs={12} sm={4} item>
                       <TextField value={tripSize} type="number" placeholder="Enter trip size" label="Trip size" variant="outlined" fullWidth required />
@@ -178,14 +210,13 @@ function AddTripForm() {
                         <Source id="routeSource" type="geojson" data={geojson}>
                           <Layer {...lineStyle} />
                         </Source>
-                        <FullscreenControl />
-                        <GeolocateControl />
-                        <NavigationControl />
-                        <Marker longitude={78.1772} latitude={26.2124} anchor="bottom" >
+                        <GeolocateControl ref={geolocateControlRef}></GeolocateControl>
+                        {/* <FullscreenControl /> */}
+                        {/* <NavigationControl /> */}
+                        {/* <Marker longitude={userLocation.longitude} latitude={userLocation.latitude} anchor="bottom" >
                           <img src="https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png" />
-                        </Marker>
+                        </Marker> */}
                       </ReactMapGl>
-
                     </Grid>
                     <Grid item xs={12} style={{ margin: "10px" }}>
                       <h2 style={{ color: 'rgb(67, 67, 136)' }}>Choose dates:</h2>
@@ -193,7 +224,7 @@ function AddTripForm() {
                         <Grid xs={12} sm={6} item>
                           <TextField
                             inputProps={{ maxLength: 8 }}
-                            value={departureDate}
+                            /* value={departureDate} */
                             placeholder="DD/MM/YYYY" label="Start date" variant="outlined"
                             fullWidth required />
                         </Grid>
@@ -226,6 +257,7 @@ function AddTripForm() {
           </Grid>
         </div>
       </>
+
     </>
   );
 }
